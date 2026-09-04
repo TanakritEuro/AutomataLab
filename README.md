@@ -1,5 +1,7 @@
 # AutomataLab
 
+**[Live demo →](https://automatalab-opal.vercel.app)**
+
 An interactive cellular automata playground that renders Conway's Game of Life and
 Wolfram's elementary automata as generative art.
 

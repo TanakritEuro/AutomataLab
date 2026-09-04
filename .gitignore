@@ -23,8 +23,10 @@ dist-ssr
 *.sln
 *.sw?
 
-# Vercel
+# Vercel (.env.local holds an OIDC token - never commit it)
 .vercel
+.env*
 
 # Build spec, kept local
 cellular-automata-prompt.md
+
