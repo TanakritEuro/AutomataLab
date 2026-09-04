@@ -1,0 +1,32 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-lab-950: #07080d;
+  --color-lab-900: #0c0e16;
+  --color-lab-850: #11141f;
+  --color-lab-800: #171b29;
+  --color-lab-700: #232838;
+  --color-lab-600: #333a4e;
+  --color-lab-400: #6b748d;
+  --color-lab-200: #b3bacb;
+  --color-accent: #5eead4;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-lab-950);
+  color: var(--color-lab-200);
+  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* The canvas is nearest-neighbour scaled artwork; never let the browser blur it. */
+canvas {
+  image-rendering: pixelated;
+}

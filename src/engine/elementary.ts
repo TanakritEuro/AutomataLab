@@ -1,0 +1,183 @@
+/**
+ * Elementary (Wolfram) 1D cellular automata.
+ *
+ * A single row of cells evolves in place; each cell's next state depends only
+ * on itself and its two immediate neighbours. Three binary inputs give eight
+ * possible neighbourhoods, and a rule assigns an output bit to each — so the
+ * complete rule fits in one byte, and there are exactly 256 of them.
+ *
+ * The byte is read in Wolfram's ordering: bit i of the rule is the output for
+ * the neighbourhood whose binary value is i, with the left neighbour as the
+ * high bit. Rule 30 = 0b00011110, so neighbourhood 001 -> 1, 010 -> 1, and so
+ * on. Drawing each successive row beneath the last is what builds the familiar
+ * triangular images.
+ */
+
+export const MAX_AGE = 65535;
+
+/** The eight neighbourhoods, high bit first, in Wolfram's numbering order. */
+export const NEIGHBOURHOODS = [
+  [1, 1, 1],
+  [1, 1, 0],
+  [1, 0, 1],
+  [1, 0, 0],
+  [0, 1, 1],
+  [0, 1, 0],
+  [0, 0, 1],
+  [0, 0, 0],
+] as const;
+
+/** Output bit this rule assigns to a neighbourhood, given as [l, c, r]. */
+export function outputFor(rule: number, neighbourhood: readonly number[]): number {
+  const index = (neighbourhood[0] << 2) | (neighbourhood[1] << 1) | neighbourhood[2];
+  return (rule >> index) & 1;
+}
+
+/** Flip one of the eight outputs, returning the resulting rule number. */
+export function toggleOutput(rule: number, neighbourhood: readonly number[]): number {
+  const index = (neighbourhood[0] << 2) | (neighbourhood[1] << 1) | neighbourhood[2];
+  return rule ^ (1 << index);
+}
+
+export type Seed = 'single' | 'random';
+
+export class ElementaryAutomaton {
+  readonly width: number;
+
+  /** The current row: 0 = dead, 1 = alive. */
+  readonly cells: Uint8Array;
+  /** Consecutive rows this column has been alive — drives colour-by-age. */
+  readonly age: Uint16Array;
+
+  generation = 0;
+  /** Live cells in the current row. */
+  population = 0;
+
+  private next: Uint8Array;
+  private nextAge: Uint16Array;
+
+  constructor(width: number) {
+    if (width < 3) throw new Error('Elementary automata need at least 3 cells');
+    this.width = width;
+    this.cells = new Uint8Array(width);
+    this.age = new Uint16Array(width);
+    this.next = new Uint8Array(width);
+    this.nextAge = new Uint16Array(width);
+  }
+
+  /** Reset to a single live cell in the middle — the classic starting point. */
+  seedSingle(): void {
+    this.cells.fill(0);
+    this.age.fill(0);
+    const middle = this.width >> 1;
+    this.cells[middle] = 1;
+    this.age[middle] = 1;
+    this.population = 1;
+    this.generation = 0;
+  }
+
+  /** Reset to a random row. */
+  seedRandom(density = 0.5, random: () => number = Math.random): void {
+    let population = 0;
+    for (let i = 0; i < this.width; i++) {
+      const alive = random() < density ? 1 : 0;
+      this.cells[i] = alive;
+      this.age[i] = alive;
+      population += alive;
+    }
+    this.population = population;
+    this.generation = 0;
+  }
+
+  seed(kind: Seed, density = 0.5, random: () => number = Math.random): void {
+    if (kind === 'single') this.seedSingle();
+    else this.seedRandom(density, random);
+  }
+
+  /**
+   * Advance one generation.
+   * @param rule 0-255
+   * @param wrap treat the row as a ring; otherwise off-row neighbours are dead
+   */
+  step(rule: number, wrap = true): void {
+    const { width, cells, age, next, nextAge } = this;
+    let population = 0;
+
+    for (let x = 0; x < width; x++) {
+      const left = x > 0 ? cells[x - 1] : wrap ? cells[width - 1] : 0;
+      const right = x < width - 1 ? cells[x + 1] : wrap ? cells[0] : 0;
+      const index = (left << 2) | (cells[x] << 1) | right;
+      const alive = (rule >> index) & 1;
+
+      next[x] = alive;
+      if (alive === 1) {
+        const prior = age[x];
+        nextAge[x] = prior < MAX_AGE ? prior + 1 : MAX_AGE;
+        population++;
+      } else {
+        nextAge[x] = 0;
+      }
+    }
+
+    cells.set(next);
+    age.set(nextAge);
+    this.population = population;
+    this.generation++;
+  }
+
+  /** The current row as a string, '#' for live — convenient in tests. */
+  toString(): string {
+    let out = '';
+    for (let i = 0; i < this.width; i++) out += this.cells[i] === 1 ? '#' : '.';
+    return out;
+  }
+}
+
+export interface ElementaryPreset {
+  rule: number;
+  name: string;
+  blurb: string;
+  /** Rendered as a highlighted callout rather than body text. */
+  callout?: string;
+}
+
+export const ELEMENTARY_PRESETS: ElementaryPreset[] = [
+  {
+    rule: 30,
+    name: 'Rule 30',
+    blurb:
+      'Chaotic. From a single cell it produces a stream of digits with no discernible pattern — Mathematica used its centre column as a random number generator, and it is still an open problem whether that column is ever periodic.',
+  },
+  {
+    rule: 90,
+    name: 'Rule 90',
+    blurb:
+      'Each cell is the XOR of its two neighbours. From a single cell this draws the Sierpinski triangle exactly — a fractal generated by a two-input logic gate.',
+  },
+  {
+    rule: 110,
+    name: 'Rule 110',
+    blurb:
+      'Localised structures drift across a periodic background and collide, and those collisions can carry information.',
+    callout:
+      'Rule 110 is proven Turing-complete: anything your computer can compute, this one-line rule can compute too.',
+  },
+  {
+    rule: 184,
+    name: 'Rule 184',
+    blurb:
+      'A traffic model. Cells behave like cars moving right into empty space, and the automaton sorts jams from free-flowing traffic.',
+  },
+  {
+    rule: 150,
+    name: 'Rule 150',
+    blurb:
+      'XOR of all three cells in the neighbourhood. Nested, self-similar triangles with a denser texture than Rule 90.',
+  },
+  {
+    rule: 54,
+    name: 'Rule 54',
+    blurb:
+      'Class 4 behaviour: a regular background hosting persistent gliders that interact — the same ingredients that make Rule 110 universal.',
+  },
+];
