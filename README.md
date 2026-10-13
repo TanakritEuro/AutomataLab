@@ -1,6 +1,6 @@
 # AutomataLab
 
-**[Live demo →](https://automatalab-opal.vercel.app)**
+**[Live demo →](https://tanakriteuro.github.io/AutomataLab/)**
 
 An interactive cellular automata playground that renders Conway's Game of Life and
 Wolfram's elementary automata as generative art.
@@ -185,3 +185,13 @@ than against the implementation:
 ## Licence
 
 MIT.
+
+## Deploying
+
+Live at **<https://tanakriteuro.github.io/AutomataLab/>**. `.github/workflows/deploy.yml` tests,
+builds and publishes to GitHub Pages on every push to `main` (repo Settings → Pages →
+Source: GitHub Actions). Pages serves it from a subpath, so `vite.config.ts` sets
+`base: '/AutomataLab/'` (case-sensitive, matching the repo name).
+
+The old Vercel URL (<https://automatalab-opal.vercel.app>) permanently redirects here via
+`vercel.json`.
