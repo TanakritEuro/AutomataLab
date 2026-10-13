@@ -182,10 +182,6 @@ than against the implementation:
 - **Rule 110 being Turing-complete still seems unreasonable.** Eight bits of rule,
   applied to a line of cells, is a universal computer.
 
-## Licence
-
-MIT.
-
 ## Deploying
 
 Live at **<https://tanakriteuro.github.io/AutomataLab/>**. `.github/workflows/deploy.yml` tests,
@@ -195,3 +191,7 @@ Source: GitHub Actions). Pages serves it from a subpath, so `vite.config.ts` set
 
 The old Vercel URL (<https://automatalab-opal.vercel.app>) permanently redirects here via
 `vercel.json`.
+
+## Licence
+
+MIT.
